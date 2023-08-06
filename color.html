@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Grid Mapping to Array</title>
+  <style>
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(16, 30px);
+      gap: 2px;
+    }
+
+    .cell {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    #arrayDisplay {
+      margin-top: 10px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <input type="color" id="colorPicker" value="#000000">
+  <div class="grid" id="gridContainer"></div>
+  <button onclick="printArray()">Print Array</button>
+  <button onclick="clearAllCells()">Clear All Cells</button>
+  <div id="arrayDisplay"></div>
+
+  <script>
+    const gridSize = 16;
+    const gridContainer = document.getElementById('gridContainer');
+
+    // Create the grid
+    for (let row = 0; row < gridSize; row++) {
+      let id = 0;
+      for (let col = 0; col < gridSize; col++) {
+        if (col == 0) {
+          id = row;
+        } else if (col % 2 == 1) {
+          id = id + (31 - (row * 2));
+        } else {
+          id = id + ((2 * row) + 1);
+        }
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.id = id;
+
+        cell.dataset.row = row;
+        cell.dataset.col = col;
+
+        cell.textContent = '';
+        cell.addEventListener('click', toggleCellColor);
+        gridContainer.appendChild(cell);
+      }
+    }
+
+    function toggleCellColor(event) {
+      const colorPicker = document.getElementById('colorPicker');
+      const cell = event.target;
+      const color = hexToRgb(colorPicker.value);
+      cell.style.backgroundColor = colorPicker.value;
+      fetch(`http://192.168.0.204:80/getParams?param1=${cell.id}&param2=${color.r}&param3=${color.g}&param4=${color.b}`)
+        .then((res) => console.log(res.status));
+    }
+
+    function printArray() {
+      const cellArray = new Array(gridSize * gridSize);
+      const _gridContainer = document.getElementById('gridContainer');
+      const cells = _gridContainer.children;
+
+      for (let i = 0; i < cells.length; i++) {
+        const cell = cells[i];
+        cellArray[cell.id] = cell.style.backgroundColor;
+      }
+
+      const arrayDisplay = document.getElementById('arrayDisplay');
+      arrayDisplay.textContent = JSON.stringify(cellArray);
+    }
+      
+    function clearAllCells() {
+      const _gridContainer = document.getElementById('gridContainer');
+      const cells = _gridContainer.children;
+
+      // Reset background color for all cells
+      for (let i = 0; i < cells.length; i++) {
+        const cell = cells[i];
+        cell.style.backgroundColor = '';
+      }
+
+      // Send HTTP GET request to the backend
+      fetch('http://192.168.0.204:80/clearAll')
+        .then((res) => console.log(res.status));
+    }
+    
+      
+  function hexToRgb(hexColor) {
+  // Remove the "#" symbol if present
+  const hex = hexColor.replace("#", "");
+
+  // Convert the hexadecimal values to integers
+  const red = parseInt(hex.substring(0, 2), 16);
+  const green = parseInt(hex.substring(2, 4), 16);
+  const blue = parseInt(hex.substring(4, 6), 16);
+
+  // Return the RGB values as an object
+  return {
+    r: red,
+    g: green,
+    b: blue
+  };
+}
+  </script>
+</body>
+</html>
